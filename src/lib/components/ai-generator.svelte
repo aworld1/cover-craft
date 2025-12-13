@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { extractTextFromPDF } from '$lib/pdf-extractor';
+	import { profileStore } from '$lib/stores/profile.svelte';
 	import Button from './button.svelte';
 
 	interface Props {
@@ -10,16 +11,30 @@
 
 	type Provider = 'openai' | 'gemini';
 	type GeminiModel = 'gemini-1.5-flash' | 'gemini-2.0-flash' | 'gemini-2.5-flash';
+	type Tone = 'professional' | 'conversational' | 'confident';
 
 	let isExpanded = $state(false);
 	let provider = $state<Provider>('openai');
 	let geminiModel = $state<GeminiModel>('gemini-2.5-flash');
+	let tone = $state<Tone>('professional');
 	let apiKey = $state('');
 	let jobDescription = $state('');
 	let resumeFile = $state<File | null>(null);
 	let resumeText = $state('');
+	let useProfileResume = $state(true);
 	let isLoading = $state(false);
 	let error = $state('');
+
+	// Use profile resume if available and user wants to
+	const effectiveResumeText = $derived(
+		useProfileResume && profileStore.hasResume 
+			? profileStore.profile.resumeText 
+			: resumeText
+	);
+	
+	const hasResume = $derived(
+		(useProfileResume && profileStore.hasResume) || resumeText
+	);
 
 	// Load settings from localStorage
 	$effect(() => {
@@ -29,6 +44,9 @@
 			
 			const savedModel = localStorage.getItem('covercraft-gemini-model') as GeminiModel | null;
 			if (savedModel) geminiModel = savedModel;
+
+			const savedTone = localStorage.getItem('covercraft-tone') as Tone | null;
+			if (savedTone) tone = savedTone;
 			
 			const savedKey = localStorage.getItem(`covercraft-${provider}-key`);
 			if (savedKey) apiKey = savedKey;
@@ -59,6 +77,14 @@
 		}
 	}
 
+	function handleToneChange(e: Event) {
+		const target = e.target as HTMLSelectElement;
+		tone = target.value as Tone;
+		if (typeof window !== 'undefined') {
+			localStorage.setItem('covercraft-tone', tone);
+		}
+	}
+
 	function handleApiKeyChange(e: Event) {
 		const target = e.target as HTMLInputElement;
 		apiKey = target.value;
@@ -86,7 +112,7 @@
 	}
 
 	async function handleGenerate() {
-		if (!apiKey || !resumeText || !jobDescription) return;
+		if (!apiKey || !effectiveResumeText || !jobDescription) return;
 
 		isLoading = true;
 		error = '';
@@ -97,10 +123,11 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					apiKey,
-					resumeText,
+					resumeText: effectiveResumeText,
 					jobDescription,
 					provider,
-					geminiModel: provider === 'gemini' ? geminiModel : undefined
+					geminiModel: provider === 'gemini' ? geminiModel : undefined,
+					tone
 				})
 			});
 
@@ -119,7 +146,7 @@
 		}
 	}
 
-	const canGenerate = $derived(apiKey && resumeText && jobDescription.trim());
+	const canGenerate = $derived(apiKey && hasResume && jobDescription.trim());
 	
 	const providerLabel = $derived(provider === 'openai' ? 'OpenAI' : 'Google Gemini');
 	const keyPlaceholder = $derived(provider === 'openai' ? 'sk-...' : 'AIza...');
@@ -185,6 +212,21 @@
 				</div>
 			{/if}
 
+			<!-- Tone Selection -->
+			<div class="field">
+				<label class="label" for="tone">Writing Tone</label>
+				<select
+					id="tone"
+					class="select"
+					value={tone}
+					onchange={handleToneChange}
+				>
+					<option value="professional">Professional — Polished, formal</option>
+					<option value="conversational">Conversational — Warm, personable</option>
+					<option value="confident">Confident — Bold, achievement-focused</option>
+				</select>
+			</div>
+
 			<!-- API Key -->
 			<div class="field">
 				<label class="label" for="api-key">{providerLabel} API Key</label>
@@ -199,22 +241,46 @@
 				<p class="hint">{keyHint}</p>
 			</div>
 
-			<!-- Resume Upload -->
+			<!-- Resume Selection -->
 			<div class="field">
-				<label class="label" for="resume">Resume PDF</label>
-				<div class="file-input">
-					<input
-						id="resume"
-						type="file"
-						accept=".pdf"
-						onchange={handleFileSelect}
-					/>
-					{#if resumeFile}
-						<span class="file-name">{resumeFile.name}</span>
-					{:else}
-						<span class="file-placeholder">Choose PDF file...</span>
-					{/if}
-				</div>
+				<label class="label">Resume</label>
+				{#if profileStore.hasResume}
+					<div class="resume-option">
+						<label class="radio-label">
+							<input
+								type="radio"
+								name="resume-source"
+								checked={useProfileResume}
+								onchange={() => { useProfileResume = true; }}
+							/>
+							<span>Use saved: {profileStore.profile.resumeFileName}</span>
+						</label>
+						<label class="radio-label">
+							<input
+								type="radio"
+								name="resume-source"
+								checked={!useProfileResume}
+								onchange={() => { useProfileResume = false; }}
+							/>
+							<span>Upload different</span>
+						</label>
+					</div>
+				{/if}
+				{#if !profileStore.hasResume || !useProfileResume}
+					<div class="file-input">
+						<input
+							id="resume"
+							type="file"
+							accept=".pdf"
+							onchange={handleFileSelect}
+						/>
+						{#if resumeFile}
+							<span class="file-name">{resumeFile.name}</span>
+						{:else}
+							<span class="file-placeholder">Choose PDF file...</span>
+						{/if}
+					</div>
+				{/if}
 			</div>
 
 			<!-- Job Description -->
@@ -361,6 +427,32 @@
 		font-size: var(--text-xs);
 		color: var(--color-text-muted);
 		margin: 0;
+	}
+
+	.resume-option {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		margin-bottom: var(--space-2);
+	}
+
+	.radio-label {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		font-size: var(--text-sm);
+		color: var(--color-text-secondary);
+		cursor: pointer;
+	}
+
+	.radio-label input {
+		accent-color: var(--color-accent);
+	}
+
+	.radio-label span {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.file-input {
