@@ -6,9 +6,9 @@
 	import SelectField from '$lib/components/select-field.svelte';
 	import Button from '$lib/components/button.svelte';
 	import LetterPreview from '$lib/components/letter-preview.svelte';
-	import LetterSidebar from '$lib/components/letter-sidebar.svelte';
-	import ProfilePanel from '$lib/components/profile-panel.svelte';
-	import StatusBadge from '$lib/components/status-badge.svelte';
+	import AppSidebar from '$lib/components/app-sidebar.svelte';
+	import SettingsModal from '$lib/components/settings-modal.svelte';
+	import SectionAccordion from '$lib/components/section-accordion.svelte';
 	import AiGenerator from '$lib/components/ai-generator.svelte';
 	import { lettersStore } from '$lib/stores/letters.svelte';
 	import { profileStore } from '$lib/stores/profile.svelte';
@@ -17,9 +17,10 @@
 
 	// State
 	let isGenerating = $state(false);
-	let showMobilePreview = $state(false);
 	let isDark = $state(true);
 	let showCopyToast = $state(false);
+	let showSettings = $state(false);
+	let showPreview = $state(true);
 
 	// Get current letter data, or default if none
 	const letterData = $derived(lettersStore.current?.data || defaultLetterData);
@@ -37,6 +38,12 @@
 		// Load theme state
 		isDark = document.documentElement.getAttribute('data-theme') !== 'light';
 
+		// Load preview state
+		const savedPreview = localStorage.getItem('covercraft-show-preview');
+		if (savedPreview !== null) {
+			showPreview = savedPreview === 'true';
+		}
+
 		// Keyboard shortcuts
 		function handleKeydown(e: KeyboardEvent) {
 			const isMod = e.metaKey || e.ctrlKey;
@@ -47,7 +54,7 @@
 			}
 			if (isMod && e.key === 'n') {
 				e.preventDefault();
-				handleNewLetter();
+				lettersStore.createLetter(profileStore.profile);
 			}
 		}
 
@@ -97,10 +104,6 @@
 		}
 	}
 
-	function handleNewLetter() {
-		lettersStore.createLetter(profileStore.profile);
-	}
-
 	function handleCopyAsText() {
 		const text = formatLetterAsText();
 		navigator.clipboard.writeText(text);
@@ -142,190 +145,172 @@
 		document.documentElement.setAttribute('data-theme', theme);
 		localStorage.setItem('covercraft-theme', theme);
 	}
+
+	function togglePreview() {
+		showPreview = !showPreview;
+		localStorage.setItem('covercraft-show-preview', String(showPreview));
+	}
+
+	function handleTitleChange(e: Event) {
+		const target = e.target as HTMLInputElement;
+		if (currentLetter) {
+			lettersStore.renameLetter(currentLetter.id, target.value);
+		}
+	}
 </script>
 
 <div class="app">
-	<!-- Header -->
-	<header class="header">
-		<div class="header-content">
-			<div class="logo">
-				<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<path d="M4 4h16v16H4V4z" stroke="currentColor" stroke-width="1.5" fill="none"/>
-					<path d="M4 8h16" stroke="currentColor" stroke-width="1.5"/>
-					<path d="M8 8v12" stroke="currentColor" stroke-width="1.5"/>
-				</svg>
-				<span class="logo-text">CoverCraft</span>
+	<!-- Sidebar -->
+	<AppSidebar onOpenSettings={() => showSettings = true} />
+
+	<!-- Main Area -->
+	<div class="main-area">
+		<!-- Header -->
+		<header class="header">
+			<div class="header-left">
+				{#if currentLetter}
+					<input
+						type="text"
+						class="title-input"
+						value={currentLetter.name}
+						onchange={handleTitleChange}
+					/>
+					<select 
+						class="status-select"
+						value={currentLetter.status}
+						onchange={handleStatusChange}
+					>
+						{#each Object.entries(statusLabels) as [value, label]}
+							<option {value}>{label}</option>
+						{/each}
+					</select>
+				{/if}
 			</div>
-			<div class="header-actions">
-				<a href="/tracker" class="tracker-link">
-					<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-						<path d="M1 3h12M1 7h12M1 11h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-					</svg>
-					Tracker
-				</a>
+			<div class="header-right">
 				<button class="icon-btn" onclick={toggleTheme} title={isDark ? 'Light mode' : 'Dark mode'}>
 					{#if isDark}
 						<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-							<circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"/>
-							<path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+							<circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/>
+							<path d="M8 1.5v1M8 13.5v1M1.5 8h1M13.5 8h1M3.3 3.3l.7.7M12 12l.7.7M3.3 12.7l.7-.7M12 4l.7-.7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
 						</svg>
 					{:else}
 						<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-							<path d="M14 9.5A6.5 6.5 0 016.5 2c0-.5.05-1 .15-1.5A7 7 0 108 15c.5 0 1-.05 1.5-.15A6.5 6.5 0 0114 9.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							<path d="M13 9A5 5 0 117 3a6 6 0 006 6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 						</svg>
 					{/if}
 				</button>
-				<Button variant="ghost" size="sm" onclick={handleNewLetter}>
-					New
-				</Button>
-				<Button variant="ghost" size="sm" onclick={() => (showMobilePreview = !showMobilePreview)}>
-					{showMobilePreview ? 'Edit' : 'Preview'}
-				</Button>
 			</div>
-		</div>
-	</header>
+		</header>
 
-	<!-- Main Content -->
-	<main class="main">
-		<!-- Input Panel -->
-		<section class="panel input-panel" class:hidden-mobile={showMobilePreview}>
-			<!-- Profile Panel -->
-			<ProfilePanel />
-			
-			<!-- Letter Sidebar -->
-			<LetterSidebar />
+		<!-- Content -->
+		<div class="content" class:preview-hidden={!showPreview}>
+			<!-- Editor Panel -->
+			<section class="editor-panel">
+				<div class="editor-scroll">
+					<!-- Your Information -->
+					<SectionAccordion title="Your Information" defaultOpen={!profileStore.hasSenderInfo}>
+						<div class="field-grid">
+							<TextField
+								label="Full Name"
+								value={letterData.senderName}
+								placeholder="Jane Smith"
+								onInput={(v) => handleDataChange('senderName', v)}
+							/>
+							<TextField
+								label="Email"
+								type="email"
+								value={letterData.senderEmail}
+								placeholder="jane@example.com"
+								onInput={(v) => handleDataChange('senderEmail', v)}
+							/>
+							<TextField
+								label="Phone"
+								type="tel"
+								value={letterData.senderPhone}
+								placeholder="+1 (555) 123-4567"
+								onInput={(v) => handleDataChange('senderPhone', v)}
+							/>
+							<TextField
+								label="Address"
+								value={letterData.senderAddress}
+								placeholder="San Francisco, CA"
+								onInput={(v) => handleDataChange('senderAddress', v)}
+							/>
+						</div>
+					</SectionAccordion>
 
-			<div class="panel-scroll">
-				<!-- Letter Header with Status -->
-				{#if currentLetter}
-					<div class="letter-header">
-						<h1 class="letter-title">{currentLetter.name}</h1>
-						<select 
-							class="status-select"
-							value={currentLetter.status}
-							onchange={handleStatusChange}
-						>
-							{#each Object.entries(statusLabels) as [value, label]}
-								<option {value}>{label}</option>
-							{/each}
-						</select>
-					</div>
-				{/if}
+					<!-- Recipient -->
+					<SectionAccordion title="Recipient">
+						<div class="field-grid">
+							<TextField
+								label="Recipient Name"
+								value={letterData.recipientName}
+								placeholder="John Doe"
+								onInput={(v) => handleDataChange('recipientName', v)}
+							/>
+							<TextField
+								label="Title"
+								value={letterData.recipientTitle}
+								placeholder="Hiring Manager"
+								onInput={(v) => handleDataChange('recipientTitle', v)}
+							/>
+							<TextField
+								label="Company"
+								value={letterData.companyName}
+								placeholder="Acme Corporation"
+								onInput={(v) => handleDataChange('companyName', v)}
+							/>
+							<TextField
+								label="Company Address"
+								value={letterData.companyAddress}
+								placeholder="New York, NY"
+								onInput={(v) => handleDataChange('companyAddress', v)}
+							/>
+						</div>
+					</SectionAccordion>
 
-				<!-- Your Info Section -->
-				<div class="section">
-					<h2 class="section-title">Your Information</h2>
-					<div class="field-grid">
-						<TextField
-							label="Full Name"
-							value={letterData.senderName}
-							placeholder="Jane Smith"
-							onInput={(v) => handleDataChange('senderName', v)}
-						/>
-						<TextField
-							label="Email"
-							type="email"
-							value={letterData.senderEmail}
-							placeholder="jane@example.com"
-							onInput={(v) => handleDataChange('senderEmail', v)}
-						/>
-						<TextField
-							label="Phone"
-							type="tel"
-							value={letterData.senderPhone}
-							placeholder="+1 (555) 123-4567"
-							onInput={(v) => handleDataChange('senderPhone', v)}
-						/>
-						<TextField
-							label="Address"
-							value={letterData.senderAddress}
-							placeholder="San Francisco, CA"
-							onInput={(v) => handleDataChange('senderAddress', v)}
-						/>
-					</div>
-				</div>
+					<!-- Letter Details -->
+					<SectionAccordion title="Letter Details">
+						<div class="field-grid">
+							<TextField
+								label="Date"
+								value={letterData.date}
+								onInput={(v) => handleDataChange('date', v)}
+							/>
+							<TextField
+								label="Salutation"
+								value={letterData.salutation}
+								placeholder="Dear Hiring Manager"
+								onInput={(v) => handleDataChange('salutation', v)}
+							/>
+							<SelectField
+								label="Sign-off"
+								value={letterData.signOff}
+								options={signOffOptions}
+								onInput={(v) => handleDataChange('signOff', v)}
+							/>
+						</div>
+					</SectionAccordion>
 
-				<!-- Recipient Section -->
-				<div class="section">
-					<h2 class="section-title">Recipient</h2>
-					<div class="field-grid">
-						<TextField
-							label="Recipient Name"
-							value={letterData.recipientName}
-							placeholder="John Doe"
-							onInput={(v) => handleDataChange('recipientName', v)}
-						/>
-						<TextField
-							label="Title"
-							value={letterData.recipientTitle}
-							placeholder="Hiring Manager"
-							onInput={(v) => handleDataChange('recipientTitle', v)}
-						/>
-						<TextField
-							label="Company"
-							value={letterData.companyName}
-							placeholder="Acme Corporation"
-							onInput={(v) => handleDataChange('companyName', v)}
-						/>
-						<TextField
-							label="Company Address"
-							value={letterData.companyAddress}
-							placeholder="New York, NY"
-							onInput={(v) => handleDataChange('companyAddress', v)}
-						/>
-					</div>
-				</div>
+					<!-- AI Generator -->
+					<SectionAccordion title="AI Generator" defaultOpen={false}>
+						<AiGenerator onGenerated={(content) => handleDataChange('body', content)} />
+					</SectionAccordion>
 
-				<!-- Date, Salutation & Sign-off Section -->
-				<div class="section">
-					<h2 class="section-title">Letter Details</h2>
-					<div class="field-grid">
-						<TextField
-							label="Date"
-							value={letterData.date}
-							onInput={(v) => handleDataChange('date', v)}
-						/>
-						<TextField
-							label="Salutation"
-							value={letterData.salutation}
-							placeholder="Dear Hiring Manager"
-							onInput={(v) => handleDataChange('salutation', v)}
-						/>
-						<SelectField
-							label="Sign-off"
-							value={letterData.signOff}
-							options={signOffOptions}
-							onInput={(v) => handleDataChange('signOff', v)}
+					<!-- Body -->
+					<div class="body-section">
+						<TextArea
+							label="Letter Body"
+							value={letterData.body}
+							placeholder="Write your cover letter here, or use AI to generate one..."
+							rows={12}
+							onInput={(v) => handleDataChange('body', v)}
 						/>
 					</div>
 				</div>
 
-				<!-- AI Generator -->
-				<div class="section">
-					<AiGenerator onGenerated={(content) => handleDataChange('body', content)} />
-				</div>
-
-				<!-- Body Section -->
-				<div class="section">
-					<TextArea
-						label="Letter Body"
-						value={letterData.body}
-						placeholder="I am writing to express my strong interest in the [Position] role at [Company].
-
-In my current role at [Current Company], I have [key achievement or responsibility]. This experience has equipped me with [relevant skills].
-
-I am particularly drawn to [Company] because [specific reason]. I believe my background in [relevant experience] would allow me to contribute meaningfully to your team.
-
-I would welcome the opportunity to discuss how my skills and experience align with your needs. Thank you for considering my application."
-						rows={16}
-						onInput={(v) => handleDataChange('body', v)}
-					/>
-				</div>
-			</div>
-
-			<!-- Footer Actions -->
-			<div class="panel-footer">
-				<div class="footer-row">
+				<!-- Footer -->
+				<div class="editor-footer">
 					<select 
 						class="template-select"
 						value={currentLetter?.template || 'classic'}
@@ -336,44 +321,61 @@ I would welcome the opportunity to discuss how my skills and experience align wi
 						<option value="bold">Bold</option>
 					</select>
 					<button 
-						class="copy-btn"
+						class="icon-btn"
 						onclick={handleCopyAsText}
 						disabled={!letterData.body.trim()}
-						title="Copy as plain text"
+						title="Copy as text"
 					>
-						<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-							<rect x="4" y="4" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/>
-							<path d="M10 4V2.5A1.5 1.5 0 008.5 1h-6A1.5 1.5 0 001 2.5v6A1.5 1.5 0 002.5 10H4" stroke="currentColor" stroke-width="1.5"/>
+						<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+							<rect x="5" y="5" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/>
+							<path d="M11 5V3.5A1.5 1.5 0 009.5 2h-5A1.5 1.5 0 003 3.5v5A1.5 1.5 0 004.5 10H5" stroke="currentColor" stroke-width="1.5"/>
 						</svg>
 					</button>
 					<Button
 						variant="primary"
-						size="lg"
 						onclick={handleDownload}
 						disabled={isGenerating || !letterData.body.trim()}
 					>
-					{#if isGenerating}
-						<svg class="spinner" width="16" height="16" viewBox="0 0 16 16" fill="none">
-							<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" stroke-dasharray="32" stroke-dashoffset="8" />
-						</svg>
-						Generating...
-					{:else}
-						<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-							<path d="M8 2v8M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-							<path d="M2 12v2h12v-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-						</svg>
-						Download PDF
-					{/if}
-				</Button>
+						{#if isGenerating}
+							<svg class="spinner" width="14" height="14" viewBox="0 0 14 14" fill="none">
+								<circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="2" stroke-dasharray="28" stroke-dashoffset="7" />
+							</svg>
+							Generating...
+						{:else}
+							Download PDF
+						{/if}
+					</Button>
+					<button 
+						class="preview-toggle"
+						onclick={togglePreview}
+						title={showPreview ? 'Hide preview' : 'Show preview'}
+					>
+						{#if showPreview}
+							<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+								<path d="M10 8l4-4M10 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+								<rect x="2" y="3" width="8" height="10" rx="1" stroke="currentColor" stroke-width="1.5"/>
+							</svg>
+						{:else}
+							<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+								<path d="M6 8l-4-4M6 8l-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+								<rect x="6" y="3" width="8" height="10" rx="1" stroke="currentColor" stroke-width="1.5"/>
+							</svg>
+						{/if}
+					</button>
 				</div>
-			</div>
-		</section>
+			</section>
 
-		<!-- Preview Panel -->
-		<section class="panel preview-panel" class:hidden-mobile={!showMobilePreview}>
-			<LetterPreview data={letterData} />
-		</section>
-	</main>
+			<!-- Preview Panel -->
+			{#if showPreview}
+				<section class="preview-panel">
+					<LetterPreview data={letterData} />
+				</section>
+			{/if}
+		</div>
+	</div>
+
+	<!-- Settings Modal -->
+	<SettingsModal open={showSettings} onClose={() => showSettings = false} />
 
 	<!-- Copy Toast -->
 	{#if showCopyToast}
@@ -389,65 +391,72 @@ I would welcome the opportunity to discuss how my skills and experience align wi
 <style>
 	.app {
 		display: flex;
-		flex-direction: column;
 		height: 100vh;
 		overflow: hidden;
 	}
 
-	/* Header */
-	.header {
-		flex-shrink: 0;
-		border-bottom: 1px solid var(--color-border);
-		background-color: var(--color-surface);
+	.main-area {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		min-width: 0;
 	}
 
-	.header-content {
+	/* Header */
+	.header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: var(--space-4) var(--space-6);
-		max-width: 1800px;
-		margin: 0 auto;
-		width: 100%;
+		padding: var(--space-3) var(--space-5);
+		border-bottom: 1px solid var(--color-border);
+		background-color: var(--color-surface);
+		flex-shrink: 0;
 	}
 
-	.logo {
+	.header-left {
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
+		min-width: 0;
+	}
+
+	.title-input {
+		font-size: var(--text-lg);
+		font-weight: 600;
 		color: var(--color-text-primary);
+		background: none;
+		border: none;
+		padding: var(--space-1) 0;
+		min-width: 120px;
+		max-width: 300px;
 	}
 
-	.logo-text {
-		font-family: var(--font-mono);
-		font-size: var(--text-sm);
+	.title-input:focus {
+		outline: none;
+		border-bottom: 2px solid var(--color-accent);
+	}
+
+	.status-select {
+		padding: var(--space-1) var(--space-2);
+		padding-right: 24px;
+		font-size: 11px;
 		font-weight: 500;
-		letter-spacing: -0.02em;
-	}
-
-	.header-actions {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
-	.tracker-link {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		padding: var(--space-2) var(--space-3);
-		font-family: var(--font-sans);
-		font-size: var(--text-xs);
-		font-weight: 500;
-		color: var(--color-text-secondary);
-		text-decoration: none;
-		border-radius: 6px;
-		transition: all var(--transition-fast);
-	}
-
-	.tracker-link:hover {
-		color: var(--color-text-primary);
 		background-color: var(--color-surface-elevated);
+		border: 1px solid var(--color-border);
+		border-radius: 4px;
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		appearance: none;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10' fill='none'%3E%3Cpath d='M2.5 4L5 6.5L7.5 4' stroke='%23737373' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 6px center;
+	}
+
+	.header-right {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
 	}
 
 	.icon-btn {
@@ -464,136 +473,71 @@ I would welcome the opportunity to discuss how my skills and experience align wi
 		transition: all var(--transition-fast);
 	}
 
-	.icon-btn:hover {
+	.icon-btn:hover:not(:disabled) {
 		color: var(--color-text-primary);
 		border-color: var(--color-text-muted);
 	}
 
-	.header-actions :global(button:last-child) {
-		display: none;
+	.icon-btn:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
 	}
 
-	/* Main Content */
-	.main {
+	/* Content */
+	.content {
 		flex: 1;
 		display: grid;
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: 1fr 420px;
 		overflow: hidden;
 	}
 
-	/* Panels */
-	.panel {
+	.content.preview-hidden {
+		grid-template-columns: 1fr;
+	}
+
+	/* Editor Panel */
+	.editor-panel {
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
-	}
-
-	.input-panel {
-		border-right: 1px solid var(--color-border);
 		background-color: var(--color-surface);
+		border-right: 1px solid var(--color-border);
 	}
 
-	.panel-scroll {
+	.content.preview-hidden .editor-panel {
+		border-right: none;
+	}
+
+	.editor-scroll {
 		flex: 1;
 		overflow-y: auto;
-		padding: var(--space-6);
-	}
-
-	.preview-panel {
-		background-color: var(--color-bg);
-	}
-
-	/* Letter Header */
-	.letter-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-4);
-		margin-bottom: var(--space-6);
-		padding-bottom: var(--space-4);
-		border-bottom: 1px solid var(--color-border);
-	}
-
-	.letter-title {
-		font-size: var(--text-lg);
-		font-weight: 600;
-		color: var(--color-text-primary);
-		margin: 0;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.status-select {
-		padding: var(--space-1) var(--space-3);
-		padding-right: 28px;
-		font-family: var(--font-mono);
-		font-size: 10px;
-		font-weight: 500;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		background-color: var(--color-surface-elevated);
-		border: 1px solid var(--color-border);
-		border-radius: 4px;
-		color: var(--color-text-secondary);
-		cursor: pointer;
-		appearance: none;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10' fill='none'%3E%3Cpath d='M2.5 4L5 6.5L7.5 4' stroke='%23737373' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-		background-repeat: no-repeat;
-		background-position: right 8px center;
-	}
-
-	.status-select:focus {
-		outline: none;
-		border-color: var(--color-accent);
-	}
-
-	/* Sections */
-	.section {
-		margin-bottom: var(--space-8);
-	}
-
-	.section:last-child {
-		margin-bottom: 0;
-	}
-
-	.section-title {
-		font-family: var(--font-mono);
-		font-size: var(--text-xs);
-		font-weight: 500;
-		color: var(--color-text-muted);
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		margin: 0 0 var(--space-4) 0;
-		padding-bottom: var(--space-3);
-		border-bottom: 1px solid var(--color-border-subtle);
+		padding: var(--space-5);
 	}
 
 	.field-grid {
 		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: var(--space-4);
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-3);
 	}
 
-	/* Panel Footer */
-	.panel-footer {
-		flex-shrink: 0;
-		padding: var(--space-4) var(--space-6);
+	.body-section {
+		margin-top: var(--space-4);
+	}
+
+	/* Editor Footer */
+	.editor-footer {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-3) var(--space-5);
 		border-top: 1px solid var(--color-border);
 		background-color: var(--color-surface);
 	}
 
-	.footer-row {
-		display: flex;
-		gap: var(--space-3);
-	}
-
 	.template-select {
-		padding: var(--space-3) var(--space-4);
-		padding-right: 36px;
-		font-family: var(--font-sans);
+		padding: var(--space-2) var(--space-3);
+		padding-right: 32px;
 		font-size: var(--text-sm);
-		font-weight: 500;
 		background-color: var(--color-surface-elevated);
 		border: 1px solid var(--color-border);
 		border-radius: 6px;
@@ -602,24 +546,20 @@ I would welcome the opportunity to discuss how my skills and experience align wi
 		appearance: none;
 		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%23737373' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 		background-repeat: no-repeat;
-		background-position: right 12px center;
+		background-position: right 10px center;
 	}
 
-	.template-select:focus {
-		outline: none;
-		border-color: var(--color-accent);
-	}
-
-	.footer-row :global(button:last-of-type) {
+	.editor-footer :global(button:not(.icon-btn):not(.preview-toggle)) {
 		flex: 1;
 	}
 
-	.copy-btn {
+	.preview-toggle {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 44px;
-		background-color: var(--color-surface-elevated);
+		width: 32px;
+		height: 32px;
+		background: none;
 		border: 1px solid var(--color-border);
 		border-radius: 6px;
 		color: var(--color-text-secondary);
@@ -627,14 +567,15 @@ I would welcome the opportunity to discuss how my skills and experience align wi
 		transition: all var(--transition-fast);
 	}
 
-	.copy-btn:hover:not(:disabled) {
+	.preview-toggle:hover {
 		color: var(--color-text-primary);
 		border-color: var(--color-text-muted);
 	}
 
-	.copy-btn:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
+	/* Preview Panel */
+	.preview-panel {
+		background-color: var(--color-bg);
+		overflow: hidden;
 	}
 
 	/* Toast */
@@ -669,54 +610,40 @@ I would welcome the opportunity to discuss how my skills and experience align wi
 		}
 	}
 
-	/* Spinner Animation */
+	/* Spinner */
 	.spinner {
 		animation: spin 1s linear infinite;
 	}
 
 	@keyframes spin {
-		from {
-			transform: rotate(0deg);
-		}
-		to {
-			transform: rotate(360deg);
-		}
+		from { transform: rotate(0deg); }
+		to { transform: rotate(360deg); }
 	}
 
 	/* Responsive */
 	@media (max-width: 1024px) {
-		.main {
+		.app {
+			flex-direction: column;
+		}
+
+		.app > :global(.sidebar) {
+			display: none;
+		}
+
+		.content {
 			grid-template-columns: 1fr;
 		}
 
-		.header-actions :global(button:last-child) {
-			display: inline-flex;
+		.preview-panel {
+			display: none;
 		}
 
-		.hidden-mobile {
+		.preview-toggle {
 			display: none;
 		}
 
 		.field-grid {
 			grid-template-columns: 1fr;
-		}
-
-		.tracker-link {
-			display: none;
-		}
-	}
-
-	@media (max-width: 640px) {
-		.header-content {
-			padding: var(--space-3) var(--space-4);
-		}
-
-		.panel-scroll {
-			padding: var(--space-4);
-		}
-
-		.panel-footer {
-			padding: var(--space-3) var(--space-4);
 		}
 	}
 </style>
