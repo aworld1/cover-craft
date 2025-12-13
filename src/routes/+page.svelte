@@ -293,9 +293,9 @@
 					</SectionAccordion>
 
 					<!-- AI Generator -->
-					<SectionAccordion title="AI Generator" defaultOpen={false}>
+					<div class="ai-section">
 						<AiGenerator onGenerated={(content) => handleDataChange('body', content)} />
-					</SectionAccordion>
+					</div>
 
 					<!-- Body -->
 					<div class="body-section">
@@ -352,13 +352,13 @@
 					>
 						{#if showPreview}
 							<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-								<path d="M10 8l4-4M10 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-								<rect x="2" y="3" width="8" height="10" rx="1" stroke="currentColor" stroke-width="1.5"/>
+								<rect x="2" y="3" width="6" height="10" rx="1" stroke="currentColor" stroke-width="1.5"/>
+								<path d="M11 6l2 2-2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 							</svg>
 						{:else}
 							<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-								<path d="M6 8l-4-4M6 8l-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-								<rect x="6" y="3" width="8" height="10" rx="1" stroke="currentColor" stroke-width="1.5"/>
+								<rect x="8" y="3" width="6" height="10" rx="1" stroke="currentColor" stroke-width="1.5"/>
+								<path d="M5 6l-2 2 2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 							</svg>
 						{/if}
 					</button>
@@ -518,6 +518,12 @@
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		gap: var(--space-3);
+	}
+
+	.ai-section {
+		margin-top: var(--space-3);
+		padding-top: var(--space-3);
+		border-top: 1px solid var(--color-border-subtle);
 	}
 
 	.body-section {

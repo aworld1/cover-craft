@@ -166,8 +166,8 @@
 		</a>
 		<button class="footer-link" onclick={onOpenSettings}>
 			<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-				<circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.5"/>
-				<path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.8 2.8l1 1M10.2 10.2l1 1M2.8 11.2l1-1M10.2 3.8l1-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+				<path d="M5.5 1.5h3l.5 1.5.9.4 1.3-.8 2.1 2.1-.8 1.3.4.9 1.5.5v3l-1.5.5-.4.9.8 1.3-2.1 2.1-1.3-.8-.9.4-.5 1.5h-3l-.5-1.5-.9-.4-1.3.8-2.1-2.1.8-1.3-.4-.9-1.5-.5v-3l1.5-.5.4-.9-.8-1.3 2.1-2.1 1.3.8.9-.4.5-1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+				<circle cx="7" cy="7" r="2" stroke="currentColor" stroke-width="1.2"/>
 			</svg>
 			Settings
 		</button>
