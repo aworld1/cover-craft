@@ -35,8 +35,9 @@
 			lettersStore.createLetter(profileStore.profile);
 		}
 
-		// Load theme state
-		isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+		// Load theme state from localStorage (same source as layout)
+		const savedTheme = localStorage.getItem('covercraft-theme');
+		isDark = savedTheme ? savedTheme === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
 
 		// Load preview state
 		const savedPreview = localStorage.getItem('covercraft-show-preview');
