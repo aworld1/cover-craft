@@ -12,7 +12,7 @@
 	import AiGenerator from '$lib/components/ai-generator.svelte';
 	import { lettersStore } from '$lib/stores/letters.svelte';
 	import { profileStore } from '$lib/stores/profile.svelte';
-	import { defaultLetterData, signOffOptions, statusLabels, type LetterStatus, type LetterData } from '$lib/types';
+	import { defaultLetterData, signOffOptions, statusLabels, statusColors, type LetterStatus, type LetterData } from '$lib/types';
 	import { generatePDF, type PDFTemplate } from '$lib/pdf-generator';
 
 	// State
@@ -21,6 +21,7 @@
 	let showCopyToast = $state(false);
 	let showSettings = $state(false);
 	let showPreview = $state(true);
+	let mounted = $state(false);
 
 	// Get current letter data, or default if none
 	const letterData = $derived(lettersStore.current?.data || defaultLetterData);
@@ -60,6 +61,10 @@
 		}
 
 		window.addEventListener('keydown', handleKeydown);
+		
+		// Trigger mount animation
+		setTimeout(() => mounted = true, 50);
+		
 		return () => window.removeEventListener('keydown', handleKeydown);
 	});
 
@@ -160,7 +165,7 @@
 	}
 </script>
 
-<div class="app">
+<div class="app" class:mounted>
 	<!-- Sidebar -->
 	<AppSidebar onOpenSettings={() => showSettings = true} />
 
@@ -168,27 +173,33 @@
 	<div class="main-area">
 		<!-- Header -->
 		<header class="header">
-			<div class="header-left">
-				{#if currentLetter}
+			{#if currentLetter}
+				<div class="document-info">
 					<input
 						type="text"
 						class="title-input"
 						value={currentLetter.name}
 						onchange={handleTitleChange}
 					/>
-					<select 
-						class="status-select"
-						value={currentLetter.status}
-						onchange={handleStatusChange}
-					>
-						{#each Object.entries(statusLabels) as [value, label]}
-							<option {value}>{label}</option>
-						{/each}
-					</select>
-				{/if}
-			</div>
-			<div class="header-right">
-				<button class="icon-btn" onclick={toggleTheme} title={isDark ? 'Light mode' : 'Dark mode'}>
+					<div class="document-meta">
+						<span class="meta-divider">·</span>
+						<div class="status-wrapper">
+							<span class="status-dot" style="background-color: {statusColors[currentLetter.status]}"></span>
+							<select 
+								class="status-select"
+								value={currentLetter.status}
+								onchange={handleStatusChange}
+							>
+								{#each Object.entries(statusLabels) as [value, label]}
+									<option {value}>{label}</option>
+								{/each}
+							</select>
+						</div>
+					</div>
+				</div>
+			{/if}
+			<div class="header-actions">
+				<button class="icon-btn theme-toggle" onclick={toggleTheme} title={isDark ? 'Light mode' : 'Dark mode'}>
 					{#if isDark}
 						<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
 							<circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.5"/>
@@ -312,15 +323,22 @@
 
 				<!-- Footer -->
 				<div class="editor-footer">
-					<select 
-						class="template-select"
-						value={currentLetter?.template || 'classic'}
-						onchange={handleTemplateChange}
-					>
-						<option value="classic">Classic</option>
-						<option value="modern">Modern</option>
-						<option value="bold">Bold</option>
-					</select>
+					<div class="template-wrapper">
+						<select 
+							class="template-select"
+							value={currentLetter?.template || 'classic'}
+							onchange={handleTemplateChange}
+						>
+							<option value="classic">Classic</option>
+							<option value="modern">Modern</option>
+							<option value="bold">Bold</option>
+						</select>
+						<div class="select-arrow">
+							<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+								<path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+						</div>
+					</div>
 					<button 
 						class="icon-btn"
 						onclick={handleCopyAsText}
@@ -394,6 +412,12 @@
 		display: flex;
 		height: 100vh;
 		overflow: hidden;
+		opacity: 0;
+		transition: opacity 0.3s ease;
+	}
+
+	.app.mounted {
+		opacity: 1;
 	}
 
 	.main-area {
@@ -402,6 +426,7 @@
 		flex-direction: column;
 		overflow: hidden;
 		min-width: 0;
+		animation: fadeIn 0.4s var(--transition-smooth) 0.1s backwards;
 	}
 
 	/* Header */
@@ -409,79 +434,140 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: var(--space-3) var(--space-5);
+		padding: 12px 20px;
 		border-bottom: 1px solid var(--color-border);
 		background-color: var(--color-surface);
 		flex-shrink: 0;
+		gap: 16px;
 	}
 
-	.header-left {
+	.document-info {
 		display: flex;
 		align-items: center;
-		gap: var(--space-3);
+		gap: 4px;
 		min-width: 0;
+		flex: 1;
 	}
 
 	.title-input {
-		font-size: var(--text-lg);
+		font-family: var(--font-display);
+		font-size: 18px;
 		font-weight: 600;
 		color: var(--color-text-primary);
 		background: none;
 		border: none;
-		padding: var(--space-1) 0;
-		min-width: 120px;
-		max-width: 300px;
+		padding: 4px 0;
+		min-width: 100px;
+		max-width: 280px;
+		border-bottom: 2px solid transparent;
+		transition: border-color 0.2s ease;
 	}
 
 	.title-input:focus {
 		outline: none;
-		border-bottom: 2px solid var(--color-accent);
+		border-bottom-color: var(--color-accent);
+	}
+
+	.document-meta {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.meta-divider {
+		color: var(--color-text-muted);
+		font-size: 14px;
+		opacity: 0.5;
+	}
+
+	.status-wrapper {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 8px 4px 6px;
+		background-color: var(--color-surface-elevated);
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		transition: all 0.15s ease;
+	}
+
+	.status-wrapper:hover {
+		border-color: var(--color-text-muted);
+		background-color: var(--color-surface-overlay);
+	}
+
+	.status-wrapper:focus-within {
+		border-color: var(--color-accent);
+		box-shadow: 0 0 0 2px var(--color-accent-muted);
+	}
+
+	.status-dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		flex-shrink: 0;
 	}
 
 	.status-select {
-		padding: var(--space-1) var(--space-2);
-		padding-right: 24px;
+		padding: 0;
+		padding-right: 14px;
 		font-size: 11px;
 		font-weight: 500;
-		background-color: var(--color-surface-elevated);
-		border: 1px solid var(--color-border);
-		border-radius: 4px;
+		background: none;
+		border: none;
 		color: var(--color-text-secondary);
 		cursor: pointer;
 		appearance: none;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10' fill='none'%3E%3Cpath d='M2.5 4L5 6.5L7.5 4' stroke='%23737373' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8' fill='none'%3E%3Cpath d='M2 3L4 5L6 3' stroke='%236b6560' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 		background-repeat: no-repeat;
-		background-position: right 6px center;
+		background-position: right 0 center;
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
 	}
 
-	.header-right {
+	.status-select:focus {
+		outline: none;
+	}
+
+	.header-actions {
 		display: flex;
 		align-items: center;
-		gap: var(--space-2);
+		gap: 8px;
+		flex-shrink: 0;
 	}
 
 	.icon-btn {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 32px;
-		height: 32px;
-		background: none;
+		width: 36px;
+		height: 36px;
+		background: var(--color-surface-elevated);
 		border: 1px solid var(--color-border);
-		border-radius: 6px;
+		border-radius: var(--radius-md);
 		color: var(--color-text-secondary);
 		cursor: pointer;
-		transition: all var(--transition-fast);
+		transition: all 0.2s ease;
 	}
 
 	.icon-btn:hover:not(:disabled) {
 		color: var(--color-text-primary);
 		border-color: var(--color-text-muted);
+		transform: translateY(-1px);
+		box-shadow: var(--shadow-sm);
+	}
+
+	.icon-btn:active:not(:disabled) {
+		transform: translateY(0);
 	}
 
 	.icon-btn:disabled {
 		opacity: 0.4;
 		cursor: not-allowed;
+	}
+
+	.theme-toggle:hover {
+		transform: rotate(15deg);
 	}
 
 	/* Content */
@@ -503,6 +589,7 @@
 		overflow: hidden;
 		background-color: var(--color-surface);
 		border-right: 1px solid var(--color-border);
+		animation: fadeIn 0.4s var(--transition-smooth) 0.2s backwards;
 	}
 
 	.content.preview-hidden .editor-panel {
@@ -522,8 +609,8 @@
 	}
 
 	.ai-section {
-		margin-top: var(--space-3);
-		padding-top: var(--space-3);
+		margin-top: var(--space-4);
+		padding-top: var(--space-4);
 		border-top: 1px solid var(--color-border-subtle);
 	}
 
@@ -541,19 +628,39 @@
 		background-color: var(--color-surface);
 	}
 
+	.template-wrapper {
+		position: relative;
+	}
+
 	.template-select {
 		padding: var(--space-2) var(--space-3);
-		padding-right: 32px;
+		padding-right: 36px;
 		font-size: var(--text-sm);
 		background-color: var(--color-surface-elevated);
 		border: 1px solid var(--color-border);
-		border-radius: 6px;
+		border-radius: var(--radius-md);
 		color: var(--color-text-primary);
 		cursor: pointer;
 		appearance: none;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%23737373' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-		background-repeat: no-repeat;
-		background-position: right 10px center;
+		transition: all 0.2s ease;
+	}
+
+	.template-select:hover {
+		border-color: var(--color-text-muted);
+	}
+
+	.template-select:focus {
+		outline: none;
+		border-color: var(--color-accent);
+	}
+
+	.template-wrapper .select-arrow {
+		position: absolute;
+		right: var(--space-3);
+		top: 50%;
+		transform: translateY(-50%);
+		color: var(--color-text-muted);
+		pointer-events: none;
 	}
 
 	.editor-footer :global(button:not(.icon-btn):not(.preview-toggle)) {
@@ -564,25 +671,28 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 32px;
-		height: 32px;
-		background: none;
+		width: 36px;
+		height: 36px;
+		background: var(--color-surface-elevated);
 		border: 1px solid var(--color-border);
-		border-radius: 6px;
+		border-radius: var(--radius-md);
 		color: var(--color-text-secondary);
 		cursor: pointer;
-		transition: all var(--transition-fast);
+		transition: all 0.2s ease;
 	}
 
 	.preview-toggle:hover {
 		color: var(--color-text-primary);
 		border-color: var(--color-text-muted);
+		transform: translateY(-1px);
+		box-shadow: var(--shadow-sm);
 	}
 
 	/* Preview Panel */
 	.preview-panel {
 		background-color: var(--color-bg);
 		overflow: hidden;
+		animation: fadeIn 0.4s var(--transition-smooth) 0.3s backwards;
 	}
 
 	/* Toast */
@@ -594,37 +704,21 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
-		padding: var(--space-3) var(--space-4);
+		padding: var(--space-3) var(--space-5);
 		background-color: var(--color-surface-elevated);
 		border: 1px solid var(--color-border);
-		border-radius: 8px;
-		color: #4ade80;
+		border-radius: var(--radius-lg);
+		color: var(--color-success);
 		font-size: var(--text-sm);
 		font-weight: 500;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-		animation: toast-in 0.2s ease;
-		z-index: 1000;
-	}
-
-	@keyframes toast-in {
-		from {
-			opacity: 0;
-			transform: translateX(-50%) translateY(10px);
-		}
-		to {
-			opacity: 1;
-			transform: translateX(-50%) translateY(0);
-		}
+		box-shadow: var(--shadow-lg);
+		animation: slideUp 0.3s var(--transition-spring);
+		z-index: var(--z-toast);
 	}
 
 	/* Spinner */
 	.spinner {
 		animation: spin 1s linear infinite;
-	}
-
-	@keyframes spin {
-		from { transform: rotate(0deg); }
-		to { transform: rotate(360deg); }
 	}
 
 	/* Responsive */

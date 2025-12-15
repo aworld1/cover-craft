@@ -157,23 +157,24 @@
 	);
 </script>
 
-<div class="ai-generator">
+<div class="ai-generator" class:expanded={isExpanded}>
 	<button
 		class="toggle-button"
 		onclick={() => (isExpanded = !isExpanded)}
 		aria-expanded={isExpanded}
 	>
-		<svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="icon">
-			<path d="M8 1v6M8 9v6M1 8h6M9 8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-		</svg>
-		<span>Generate with AI</span>
+		<div class="toggle-icon">
+			<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+				<path d="M8 1v6M8 9v6M1 8h6M9 8h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+			</svg>
+		</div>
+		<span class="toggle-text">Generate with AI</span>
 		<svg 
 			width="12" 
 			height="12" 
 			viewBox="0 0 12 12" 
 			fill="none" 
 			class="chevron"
-			class:expanded={isExpanded}
 		>
 			<path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 		</svg>
@@ -184,47 +185,68 @@
 			<!-- Provider Selection -->
 			<div class="field">
 				<label class="label" for="provider">AI Provider</label>
-				<select
-					id="provider"
-					class="select"
-					value={provider}
-					onchange={handleProviderChange}
-				>
-					<option value="openai">OpenAI (GPT-4o Mini)</option>
-					<option value="gemini">Google Gemini</option>
-				</select>
+				<div class="select-wrapper">
+					<select
+						id="provider"
+						class="select"
+						value={provider}
+						onchange={handleProviderChange}
+					>
+						<option value="openai">OpenAI (GPT-4o Mini)</option>
+						<option value="gemini">Google Gemini</option>
+					</select>
+					<div class="select-arrow">
+						<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+							<path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+						</svg>
+					</div>
+				</div>
 			</div>
 
 			<!-- Gemini Model Selection -->
 			{#if provider === 'gemini'}
 				<div class="field">
 					<label class="label" for="gemini-model">Gemini Model</label>
-					<select
-						id="gemini-model"
-						class="select"
-						value={geminiModel}
-						onchange={handleGeminiModelChange}
-					>
-						<option value="gemini-2.5-flash">Gemini 2.5 Flash (Latest)</option>
-						<option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-						<option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-					</select>
+					<div class="select-wrapper">
+						<select
+							id="gemini-model"
+							class="select"
+							value={geminiModel}
+							onchange={handleGeminiModelChange}
+						>
+							<option value="gemini-2.5-flash">Gemini 2.5 Flash (Latest)</option>
+							<option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+							<option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+						</select>
+						<div class="select-arrow">
+							<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+								<path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+							</svg>
+						</div>
+					</div>
 				</div>
 			{/if}
 
 			<!-- Tone Selection -->
 			<div class="field">
 				<label class="label" for="tone">Writing Tone</label>
-				<select
-					id="tone"
-					class="select"
-					value={tone}
-					onchange={handleToneChange}
-				>
-					<option value="professional">Professional — Polished, formal</option>
-					<option value="conversational">Conversational — Warm, personable</option>
-					<option value="confident">Confident — Bold, achievement-focused</option>
-				</select>
+				<div class="select-wrapper">
+					<select
+						id="tone"
+						class="select"
+						value={tone}
+						onchange={handleToneChange}
+					>
+						<option value="professional">Professional — Polished, formal</option>
+						<option value="conversational">Conversational — Warm, personable</option>
+						<option value="confident">Confident — Bold, achievement-focused</option>
+					</select>
+					<div class="select-arrow">
+						<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+							<path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+						</svg>
+					</div>
+				</div>
 			</div>
 
 			<!-- API Key -->
@@ -253,6 +275,7 @@
 								checked={useProfileResume}
 								onchange={() => { useProfileResume = true; }}
 							/>
+							<span class="radio-indicator"></span>
 							<span>Use saved: {profileStore.profile.resumeFileName}</span>
 						</label>
 						<label class="radio-label">
@@ -262,6 +285,7 @@
 								checked={!useProfileResume}
 								onchange={() => { useProfileResume = false; }}
 							/>
+							<span class="radio-indicator"></span>
 							<span>Upload different</span>
 						</label>
 					</div>
@@ -277,7 +301,13 @@
 						{#if resumeFile}
 							<span class="file-name">{resumeFile.name}</span>
 						{:else}
-							<span class="file-placeholder">Choose PDF file...</span>
+							<span class="file-placeholder">
+								<svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+									<path d="M8 3v7M5 6l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+									<path d="M2 10v3a1 1 0 001 1h10a1 1 0 001-1v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+								</svg>
+								Choose PDF file...
+							</span>
 						{/if}
 					</div>
 				{/if}
@@ -319,53 +349,100 @@
 
 <style>
 	.ai-generator {
-		border: 1px solid var(--color-border);
-		border-radius: 8px;
+		position: relative;
+		border-radius: var(--radius-lg);
 		overflow: hidden;
 		background-color: var(--color-surface-elevated);
+		transition: box-shadow 0.3s ease;
+	}
+
+	/* Gradient border effect */
+	.ai-generator::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		padding: 1px;
+		border-radius: var(--radius-lg);
+		background: linear-gradient(
+			135deg,
+			var(--color-border) 0%,
+			var(--color-accent) 50%,
+			var(--color-border) 100%
+		);
+		-webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+		mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+		-webkit-mask-composite: xor;
+		mask-composite: exclude;
+		pointer-events: none;
+		opacity: 0.5;
+		transition: opacity 0.3s ease;
+	}
+
+	.ai-generator:hover::before,
+	.ai-generator.expanded::before {
+		opacity: 1;
+	}
+
+	.ai-generator.expanded {
+		box-shadow: var(--shadow-md);
 	}
 
 	.toggle-button {
 		width: 100%;
 		display: flex;
 		align-items: center;
-		gap: var(--space-2);
-		padding: var(--space-3) var(--space-4);
+		gap: var(--space-3);
+		padding: var(--space-4);
 		background: none;
 		border: none;
 		color: var(--color-accent);
-		font-family: var(--font-mono);
-		font-size: var(--text-xs);
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
 		font-weight: 500;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
 		cursor: pointer;
-		transition: background-color var(--transition-fast);
+		transition: background-color 0.2s ease;
 	}
 
 	.toggle-button:hover {
 		background-color: var(--color-accent-muted);
 	}
 
-	.icon {
+	.toggle-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		background-color: var(--color-accent-muted);
+		border-radius: var(--radius-md);
 		color: var(--color-accent);
+		transition: transform 0.2s ease;
+	}
+
+	.ai-generator.expanded .toggle-icon {
+		transform: rotate(45deg);
+	}
+
+	.toggle-text {
+		flex: 1;
+		text-align: left;
 	}
 
 	.chevron {
-		margin-left: auto;
-		transition: transform var(--transition-fast);
+		color: var(--color-accent);
+		transition: transform 0.3s var(--transition-bounce);
 	}
 
-	.chevron.expanded {
+	.ai-generator.expanded .chevron {
 		transform: rotate(180deg);
 	}
 
 	.panel {
-		padding: var(--space-4);
-		border-top: 1px solid var(--color-border);
+		padding: 0 var(--space-4) var(--space-4);
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-4);
+		animation: fadeInUp 0.3s var(--transition-smooth);
 	}
 
 	.field {
@@ -375,7 +452,7 @@
 	}
 
 	.label {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
 		font-size: var(--text-xs);
 		font-weight: 500;
 		color: var(--color-text-muted);
@@ -386,23 +463,36 @@
 	.input,
 	.textarea,
 	.select {
+		width: 100%;
 		background-color: var(--color-surface);
 		border: 1px solid var(--color-border);
-		border-radius: 6px;
+		border-radius: var(--radius-md);
 		padding: var(--space-3) var(--space-4);
 		font-family: var(--font-sans);
 		font-size: var(--text-sm);
 		color: var(--color-text-primary);
-		transition: border-color var(--transition-fast);
+		transition: 
+			border-color 0.2s ease,
+			box-shadow 0.2s ease;
+	}
+
+	.select-wrapper {
+		position: relative;
 	}
 
 	.select {
 		cursor: pointer;
 		appearance: none;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%23737373' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-		background-repeat: no-repeat;
-		background-position: right 12px center;
-		padding-right: 36px;
+		padding-right: 40px;
+	}
+
+	.select-arrow {
+		position: absolute;
+		right: var(--space-3);
+		top: 50%;
+		transform: translateY(-50%);
+		color: var(--color-text-muted);
+		pointer-events: none;
 	}
 
 	.select option {
@@ -415,12 +505,13 @@
 	.select:focus {
 		outline: none;
 		border-color: var(--color-accent);
+		box-shadow: 0 0 0 3px var(--color-accent-muted);
 	}
 
 	.textarea {
 		resize: vertical;
 		min-height: 100px;
-		line-height: 1.5;
+		line-height: var(--leading-relaxed);
 	}
 
 	.hint {
@@ -443,13 +534,47 @@
 		font-size: var(--text-sm);
 		color: var(--color-text-secondary);
 		cursor: pointer;
+		padding: var(--space-2);
+		border-radius: var(--radius-md);
+		transition: background-color 0.15s ease;
+	}
+
+	.radio-label:hover {
+		background-color: var(--color-surface);
 	}
 
 	.radio-label input {
-		accent-color: var(--color-accent);
+		position: absolute;
+		opacity: 0;
+		pointer-events: none;
 	}
 
-	.radio-label span {
+	.radio-indicator {
+		width: 16px;
+		height: 16px;
+		border: 2px solid var(--color-border);
+		border-radius: 50%;
+		position: relative;
+		transition: border-color 0.2s ease;
+	}
+
+	.radio-label input:checked + .radio-indicator {
+		border-color: var(--color-accent);
+	}
+
+	.radio-label input:checked + .radio-indicator::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 8px;
+		height: 8px;
+		background-color: var(--color-accent);
+		border-radius: 50%;
+	}
+
+	.radio-label span:last-child {
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -468,19 +593,29 @@
 
 	.file-name,
 	.file-placeholder {
-		display: block;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2);
 		background-color: var(--color-surface);
-		border: 1px dashed var(--color-border);
-		border-radius: 6px;
-		padding: var(--space-3) var(--space-4);
+		border: 2px dashed var(--color-border);
+		border-radius: var(--radius-md);
+		padding: var(--space-4);
 		font-size: var(--text-sm);
 		text-align: center;
+		transition: all 0.2s ease;
+	}
+
+	.file-input:hover .file-placeholder {
+		border-color: var(--color-accent);
+		background-color: var(--color-accent-muted);
 	}
 
 	.file-name {
 		color: var(--color-text-primary);
 		border-style: solid;
 		border-color: var(--color-accent);
+		background-color: var(--color-accent-muted);
 	}
 
 	.file-placeholder {
@@ -488,17 +623,15 @@
 	}
 
 	.error {
-		color: #ef4444;
+		color: var(--color-error);
 		font-size: var(--text-sm);
 		margin: 0;
+		padding: var(--space-2) var(--space-3);
+		background-color: rgba(232, 92, 74, 0.1);
+		border-radius: var(--radius-md);
 	}
 
 	.spinner {
 		animation: spin 1s linear infinite;
-	}
-
-	@keyframes spin {
-		from { transform: rotate(0deg); }
-		to { transform: rotate(360deg); }
 	}
 </style>

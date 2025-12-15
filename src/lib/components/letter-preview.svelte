@@ -20,7 +20,16 @@
 	</div>
 	
 	<div class="preview-wrapper">
+		<!-- Ambient glow behind the page -->
+		<div class="ambient-glow"></div>
+		
 		<div class="page">
+			<!-- Paper texture overlay -->
+			<div class="paper-texture"></div>
+			
+			<!-- Corner fold effect -->
+			<div class="corner-fold"></div>
+			
 			<!-- Header: Sender Info + Date -->
 			<header class="header-block">
 				<div class="sender-info">
@@ -87,6 +96,7 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%;
+		animation: fadeIn 0.4s var(--transition-smooth);
 	}
 
 	.preview-header {
@@ -95,47 +105,107 @@
 		align-items: center;
 		padding: var(--space-3) var(--space-4);
 		border-bottom: 1px solid var(--color-border);
+		background-color: var(--color-surface);
 	}
 
 	.preview-label {
-		font-family: var(--font-mono);
-		font-size: var(--text-xs);
+		font-family: var(--font-display);
+		font-size: var(--text-sm);
 		font-weight: 500;
 		color: var(--color-text-muted);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
+		letter-spacing: 0.02em;
 	}
 
 	.word-count {
 		font-family: var(--font-mono);
 		font-size: var(--text-xs);
 		color: var(--color-text-muted);
+		padding: var(--space-1) var(--space-2);
+		background-color: var(--color-surface-elevated);
+		border-radius: var(--radius-sm);
 	}
 
 	.preview-wrapper {
 		flex: 1;
 		overflow: auto;
-		padding: var(--space-6);
+		padding: var(--space-8);
 		background-color: var(--color-bg);
 		display: flex;
 		justify-content: center;
 		align-items: flex-start;
+		position: relative;
+	}
+
+	/* Ambient glow behind page */
+	.ambient-glow {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 400px;
+		height: 500px;
+		background: radial-gradient(
+			ellipse at center,
+			var(--color-accent-glow) 0%,
+			transparent 70%
+		);
+		opacity: 0.3;
+		pointer-events: none;
+		filter: blur(60px);
 	}
 
 	.page {
+		position: relative;
 		/* US Letter: 8.5" x 11" = 612 x 792 points */
-		/* Fixed width, height grows with content */
 		width: 510px;
-		min-height: 660px; /* Minimum one page height */
-		background-color: #ffffff;
-		color: #1a1a1a;
-		/* Scaled padding: 72pt * (510/612) ≈ 60px */
+		min-height: 660px;
+		background-color: #fffef9;
+		color: #1a1714;
 		padding: 60px;
 		font-family: var(--font-serif);
 		font-size: 9.2pt;
 		line-height: 1.6;
-		box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+		box-shadow: var(--shadow-page);
 		flex-shrink: 0;
+		animation: floatUp 0.5s var(--transition-smooth);
+		overflow: hidden;
+	}
+
+	/* Paper texture overlay */
+	.paper-texture {
+		position: absolute;
+		inset: 0;
+		background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+		opacity: 0.03;
+		pointer-events: none;
+	}
+
+	/* Corner fold effect */
+	.corner-fold {
+		position: absolute;
+		top: 0;
+		right: 0;
+		width: 0;
+		height: 0;
+		border-style: solid;
+		border-width: 0 24px 24px 0;
+		border-color: transparent var(--color-bg) transparent transparent;
+		filter: drop-shadow(-1px 1px 1px rgba(0,0,0,0.1));
+	}
+
+	.corner-fold::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		right: -24px;
+		width: 24px;
+		height: 24px;
+		background: linear-gradient(
+			135deg,
+			#f5f3ee 0%,
+			#e8e5de 100%
+		);
+		border-radius: 0 0 0 2px;
 	}
 
 	@media (max-width: 640px) {
@@ -146,6 +216,14 @@
 			padding: 40px;
 			font-size: 8pt;
 		}
+
+		.preview-wrapper {
+			padding: var(--space-4);
+		}
+
+		.ambient-glow {
+			display: none;
+		}
 	}
 
 	.header-block {
@@ -154,7 +232,8 @@
 		align-items: flex-start;
 		margin-bottom: 28px;
 		padding-bottom: 16px;
-		border-bottom: 1px solid #e5e5e5;
+		border-bottom: 1px solid #e5e2dc;
+		position: relative;
 	}
 
 	.sender-info {
@@ -165,21 +244,22 @@
 		font-weight: 600;
 		font-size: 11.7pt;
 		margin-bottom: 3px;
+		color: #1a1714;
 	}
 
 	.sender-contact {
 		font-size: 8.3pt;
-		color: #525252;
+		color: #52504a;
 	}
 
 	.sender-address {
 		font-size: 8.3pt;
-		color: #525252;
+		color: #52504a;
 	}
 
 	.date {
 		font-size: 8.3pt;
-		color: #525252;
+		color: #52504a;
 		text-align: right;
 		white-space: nowrap;
 	}
@@ -187,14 +267,17 @@
 	.recipient-block {
 		margin-bottom: 20px;
 		line-height: 1.4;
+		color: #1a1714;
 	}
 
 	.salutation {
 		margin-bottom: 20px;
+		color: #1a1714;
 	}
 
 	.body {
 		margin-bottom: 12px;
+		color: #1a1714;
 	}
 
 	.body p {
@@ -207,17 +290,19 @@
 	}
 
 	.placeholder {
-		color: #a3a3a3;
+		color: #a8a098;
 		font-style: italic;
 	}
 
 	.closing {
 		line-height: 1.4;
+		color: #1a1714;
 	}
 
 	.signature {
 		margin-top: 16px;
 		font-weight: 500;
+		font-family: var(--font-display);
+		font-size: 10pt;
 	}
 </style>
-
