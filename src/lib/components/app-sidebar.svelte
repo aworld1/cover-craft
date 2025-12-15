@@ -207,7 +207,7 @@
 		background-color: var(--color-accent);
 		border: none;
 		border-radius: 6px;
-		color: #0a0a0a;
+		color: var(--color-accent-contrast);
 		font-family: var(--font-sans);
 		font-size: var(--text-sm);
 		font-weight: 600;

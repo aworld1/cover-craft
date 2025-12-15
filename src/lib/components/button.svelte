@@ -65,7 +65,7 @@
 	/* Variants */
 	.primary {
 		background-color: var(--color-accent);
-		color: #0a0a0a;
+		color: var(--color-accent-contrast);
 	}
 
 	.primary:hover:not(:disabled) {
